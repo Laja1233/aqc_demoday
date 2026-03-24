@@ -1,0 +1,143 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0">
+<title>AQC Demo Day Generator</title>
+<style>
+body {
+    background: #071a0a;
+    color: white;
+    font-family: system-ui;
+    display: flex;
+    flex-direction: column;
+    align-items: center;
+    padding: 20px;
+    margin: 0;
+}
+h1 { margin-bottom: 20px; text-align:center; }
+.upload-box {
+    border: 2px dashed #00c9a7;
+    padding: 35px;
+    border-radius: 14px;
+    text-align: center;
+    cursor: pointer;
+    width: 90%;
+    max-width: 360px;
+    margin-bottom: 15px;
+    transition: 0.2s;
+}
+.upload-box:hover { background: rgba(0,201,167,0.08); }
+.upload-box input { display: none; }
+#status { margin-bottom: 10px; font-size: 14px; opacity: 0.8; }
+#preview { margin-top: 10px; max-width: 150px; border-radius: 8px; display: none; }
+button { background: #00c9a7; border: none; padding: 12px 28px; border-radius: 30px; font-size: 16px; cursor: pointer; margin-top: 10px; transition: 0.2s; }
+button:hover:not(:disabled) { background: #00b18f; }
+button:disabled { opacity: 0.4; cursor: not-allowed; }
+canvas { margin-top: 25px; max-width: 90%; width: 100%; border-radius: 12px; box-shadow: 0 20px 60px rgba(0,0,0,0.6); }
+#downloadBtn {
+    display: none;
+    margin-top: 20px;
+    background: #00c9a7;
+    color: #021;
+    padding: 12px 28px;
+    border-radius: 30px;
+    font-weight: 600;
+    text-decoration: none;
+    cursor: pointer;
+    transition: 0.2s;
+}
+#downloadBtn:hover { background: #00b18f; color: #000; }
+@media(max-width: 480px){
+    .upload-box { padding: 25px; }
+    button, #downloadBtn { width: 80%; text-align: center; }
+}
+</style>
+</head>
+<body>
+
+<h1>AQC Demo Day Flyer</h1>
+
+<label class="upload-box">
+    Click to Upload Photo
+    <input type="file" id="fileInput" accept="image/*">
+</label>
+
+<div id="status">No image uploaded</div>
+<img id="preview">
+
+<button id="generateBtn" disabled>Generate Flyer</button>
+<canvas id="canvas"></canvas>
+
+<!-- Use <a> for download -->
+<a id="downloadBtn">Download Flyer</a>
+
+<script>
+const TEMPLATE_SRC = "template.png"; // Must exist in same folder
+
+const fileInput = document.getElementById("fileInput");
+const generateBtn = document.getElementById("generateBtn");
+const canvas = document.getElementById("canvas");
+const ctx = canvas.getContext("2d");
+const downloadBtn = document.getElementById("downloadBtn");
+const status = document.getElementById("status");
+const preview = document.getElementById("preview");
+
+let uploadedImage = null;
+
+// Upload image
+fileInput.addEventListener("change", e => {
+    const file = e.target.files[0];
+    if (!file) return;
+
+    const reader = new FileReader();
+    reader.onload = e => {
+        uploadedImage = e.target.result;
+        preview.src = uploadedImage;
+        preview.style.display = "block";
+        status.textContent = "Photo Uploaded ✓";
+        generateBtn.disabled = false;
+    }
+    reader.readAsDataURL(file);
+});
+
+// Generate flyer
+generateBtn.onclick = () => {
+    if (!uploadedImage) return alert("Upload a photo first!");
+    const template = new Image();
+    template.onload = () => {
+        canvas.width = template.width;
+        canvas.height = template.height;
+        ctx.drawImage(template, 0, 0);
+
+        const photo = new Image();
+        photo.onload = () => {
+            const cx = canvas.width / 2;
+            const cy = canvas.height / 2;
+            const r = canvas.width * 0.23;
+
+            ctx.save();
+            ctx.beginPath();
+            ctx.arc(cx, cy, r, 0, Math.PI*2);
+            ctx.clip();
+
+            const scale = Math.max((r*2)/photo.width, (r*2)/photo.height);
+            const w = photo.width * scale;
+            const h = photo.height * scale;
+            ctx.drawImage(photo, cx - w/2, cy - h/2, w, h);
+            ctx.restore();
+
+            // Convert canvas to data URL and enable download
+            const dataURL = canvas.toDataURL("image/png");
+            downloadBtn.href = dataURL;
+            downloadBtn.download = "AQC-demo-day.png";
+            downloadBtn.style.display = "inline-block";
+        }
+        photo.src = uploadedImage;
+    }
+    template.src = TEMPLATE_SRC;
+}
+</script>
+
+</body>
+</html>
