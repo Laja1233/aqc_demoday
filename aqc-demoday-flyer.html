@@ -1,0 +1,196 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0">
+
+<title>AQC Demo Day Flyer Generator</title>
+
+<style>
+
+body{
+background:#071a0a;
+font-family:system-ui;
+color:white;
+display:flex;
+flex-direction:column;
+align-items:center;
+padding:40px;
+}
+
+h1{
+margin-bottom:30px;
+}
+
+.upload{
+border:2px dashed #00c9a7;
+padding:50px;
+border-radius:14px;
+cursor:pointer;
+text-align:center;
+margin-bottom:20px;
+width:320px;
+transition:.2s;
+}
+
+.upload:hover{
+background:rgba(0,201,167,.08);
+}
+
+.upload input{
+display:none;
+}
+
+button{
+background:#00c9a7;
+border:none;
+padding:14px 32px;
+font-size:16px;
+border-radius:30px;
+cursor:pointer;
+margin-top:10px;
+font-weight:600;
+}
+
+button:disabled{
+opacity:.4;
+cursor:not-allowed;
+}
+
+canvas{
+margin-top:30px;
+max-width:500px;
+width:100%;
+border-radius:12px;
+box-shadow:0 20px 60px rgba(0,0,0,.6);
+}
+
+.download{
+margin-top:20px;
+background:#00c9a7;
+color:#021;
+padding:12px 30px;
+border-radius:30px;
+text-decoration:none;
+font-weight:600;
+display:none;
+}
+
+</style>
+</head>
+
+<body>
+
+<h1>AQC Demo Day Flyer</h1>
+
+<label class="upload">
+Click to upload your photo
+<input type="file" id="fileInput" accept="image/*">
+</label>
+
+<button id="generate" disabled>Generate Flyer</button>
+
+<canvas id="canvas"></canvas>
+
+<a id="download" class="download">Download Image</a>
+
+<script>
+
+const TEMPLATE = "template.png";
+
+const fileInput = document.getElementById("fileInput");
+const generate = document.getElementById("generate");
+const canvas = document.getElementById("canvas");
+const ctx = canvas.getContext("2d");
+const downloadBtn = document.getElementById("download");
+
+let uploadedImage = null;
+
+/* upload */
+fileInput.addEventListener("change", e => {
+
+const file = e.target.files[0];
+if(!file) return;
+
+const reader = new FileReader();
+
+reader.onload = e => {
+uploadedImage = e.target.result;
+generate.disabled = false;
+};
+
+reader.readAsDataURL(file);
+
+});
+
+/* generate flyer */
+
+generate.onclick = () => {
+
+const template = new Image();
+
+template.onload = () => {
+
+canvas.width = template.width;
+canvas.height = template.height;
+
+/* draw template first */
+ctx.drawImage(template,0,0);
+
+const photo = new Image();
+
+photo.onload = () => {
+
+/* center circle */
+const cx = canvas.width/2;
+const cy = canvas.height/2;
+const r = canvas.width * 0.23;
+
+/* clip */
+ctx.save();
+ctx.beginPath();
+ctx.arc(cx,cy,r,0,Math.PI*2);
+ctx.clip();
+
+/* scale image */
+const scale = Math.max(
+(r*2)/photo.width,
+(r*2)/photo.height
+);
+
+const w = photo.width * scale;
+const h = photo.height * scale;
+
+/* draw */
+ctx.drawImage(photo,cx-w/2,cy-h/2,w,h);
+
+ctx.restore();
+
+/* redraw template on top */
+ctx.drawImage(template,0,0);
+
+/* download */
+canvas.toBlob(blob => {
+
+const url = URL.createObjectURL(blob);
+
+downloadBtn.href = url;
+downloadBtn.download = "AQC-demo-day.png";
+downloadBtn.style.display = "inline-block";
+
+});
+
+};
+
+photo.src = uploadedImage;
+
+};
+
+template.src = TEMPLATE;
+
+};
+
+</script>
+
+</body>
+</html>
